@@ -13,7 +13,7 @@ describe("simple-code package build", () => {
 
   test("package.json bin must expose 'simple-code' command", () => {
     expect(PKG.bin).toBeDefined();
-    expect(PKG.bin["simple-code"]).toBe("./dist/index.js");
+    expect(PKG.bin["simple-code"]).toBe("./dist/cli.js");
   });
 
   test("package.json must depend on @opencode-ai/plugin", () => {

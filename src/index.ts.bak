@@ -1,0 +1,4 @@
+// simple-code entry barrel: re-exports the plugin (default) and CLI helpers
+export { default as default } from "./index.js";
+export { runConfig } from "./config.js";
+export { runInit } from "./init.js";
