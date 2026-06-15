@@ -1,0 +1,25 @@
+{
+  "name": "simple-code",
+  "version": "0.1.0",
+  "description": "opencode plugin: zero-config coding + work agent (agentmemory + CodeGraph + UA + agent-skills)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": { "simple-code": "./dist/index.js" },
+  "scripts": {
+    "build": "tsup",
+    "test": "bun test",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.17.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3"
+  },
+  "engines": { "node": ">=20" },
+  "license": "MIT",
+  "files": ["dist", "README.md", "LICENSE"]
+}
