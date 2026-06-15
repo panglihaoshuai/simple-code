@@ -23,27 +23,32 @@ export class MirrorResolver {
     // 1. 优先看组件的特定字段 (e.g. net.release.github_release)
     const net = this.config.net ?? {} as Partial<NetConfig>;
     const compSection = net[component] as Record<string, unknown> | undefined;
-    if (!compSection) return "";
-    const componentField = compSection?.[field];
-    if (typeof componentField === "string" && componentField !== "") {
-      return componentField;
+    if (compSection) {
+      const componentField = compSection[field];
+      if (typeof componentField === "string" && componentField !== "") {
+        return componentField;
+      }
+      // 2. 组件的 mirror
+      const componentMirror = compSection.mirror;
+      if (typeof componentMirror === "string" && componentMirror !== "") {
+        return componentMirror;
+      }
     }
 
-    // 2. 组件的 mirror
-    const componentMirror = compSection?.mirror;
-    if (typeof componentMirror === "string" && componentMirror !== "") {
-      return componentMirror;
+    // 3. 全局 net.mirror fallback (cargo .cargo/config.toml [net] base)
+    const globalMirror = net.mirror;
+    if (typeof globalMirror === "string" && globalMirror !== "") {
+      return globalMirror;
     }
 
-    // 3. 全局 net.mirror (fallback)
-    // 注意：NetSchema 没有顶层 mirror，需要从组件 level 提升或单独存储
-    // 简单实现：fallback 到空字符串（走原站）
+    // 4. 走原站
     return "";
   }
 
   resolveAll(): Record<string, string> {
     const components: Array<keyof NetConfig> = ["release", "llm", "lsp", "browser", "mcp", "upstream"];
     const fields: Record<keyof NetConfig, string[]> = {
+      mirror: [],
       release: ["github_release", "homebrew_bottle", "npm_package"],
       llm: ["mirror"],
       lsp: ["mirror"],

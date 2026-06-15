@@ -88,4 +88,18 @@ describe("MirrorResolver", () => {
     const all = resolver.resolveAll();
     expect(Object.keys(all).length).toBeGreaterThanOrEqual(9);
   });
+
+  test("global net.mirror fallback applies when component is empty", () => {
+    const custom = ConfigSchema.parse({ net: { mirror: "https://global.example.com" } });
+    // After parse, custom may not have full nested structure; use direct cast
+    const resolver = new MirrorResolver({ ...DEFAULT_CONFIG, net: { ...DEFAULT_CONFIG.net, mirror: "https://global.example.com" } as unknown as typeof DEFAULT_CONFIG.net });
+    // mcp default is "" so global should win
+    expect(resolver.resolve("mcp", "mirror")).toBe("https://global.example.com");
+  });
+
+  test("field-level override beats global mirror", () => {
+    const resolver = new MirrorResolver({ ...DEFAULT_CONFIG, net: { ...DEFAULT_CONFIG.net, mirror: "https://global.example.com" } as unknown as typeof DEFAULT_CONFIG.net });
+    // lsp has its own mirror in DEFAULT_CONFIG, should win over global
+    expect(resolver.resolve("lsp", "mirror")).toBe("https://gh-proxy.com/");
+  });
 });

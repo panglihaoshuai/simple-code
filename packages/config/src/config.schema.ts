@@ -6,6 +6,8 @@ const MirrorUrlSchema = z.string().url().or(z.literal(""));
 // ─── Net segments (no .default() — defaults in DEFAULT_CONFIG) ───
 
 export const NetSchema = z.object({
+  // Global fallback (cargo .cargo/config.toml [net] base mirror)
+  mirror: MirrorUrlSchema.optional(),
   release: z.object({
     enabled: z.boolean().optional(),
     mirror: MirrorUrlSchema.optional(),
@@ -107,6 +109,7 @@ export const ConfigSchema = z.object({
 
 interface DefaultConfig {
   net: {
+    mirror?: string; // global fallback (cargo .cargo/config.toml [net] base)
     release: { enabled: boolean; mirror: string; github_release?: string; homebrew_bottle?: string; npm_package?: string };
     llm: { mirror: string };
     lsp: { mirror: string };
