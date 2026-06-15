@@ -1,0 +1,76 @@
+{
+  "checked_at": "2026-06-15T09:59:08.065Z",
+  "triggers_fired": [
+    "threshold_reached"
+  ],
+  "components": {
+    "agentmemory": {
+      "current": "0.9.27",
+      "latest": "0.9.27",
+      "delta": "none",
+      "must_release": false
+    },
+    "understand_anything": {
+      "current": "2.7.3",
+      "latest": "2.7.3",
+      "delta": "none",
+      "must_release": false,
+      "release_notes_url": "https://github.com/Egonex-AI/Understand-Anything/releases/tag/v2.7.3"
+    },
+    "agent_skills": {
+      "current": "0.6.2",
+      "latest": "0.6.2",
+      "delta": "none",
+      "must_release": false,
+      "release_notes_url": "https://github.com/addyosmani/agent-skills/releases/tag/0.6.2"
+    },
+    "lsp": {
+      "rust-analyzer": {
+        "current": "",
+        "latest": "",
+        "delta": "none",
+        "must_release": false
+      },
+      "pyright": {
+        "current": "",
+        "latest": "",
+        "delta": "none",
+        "must_release": false
+      },
+      "typescript-language-server": {
+        "current": "",
+        "latest": "",
+        "delta": "none",
+        "must_release": false
+      },
+      "jdtls": {
+        "current": "",
+        "latest": "",
+        "delta": "none",
+        "must_release": false
+      },
+      "gopls": {
+        "current": "",
+        "latest": "",
+        "delta": "none",
+        "must_release": false
+      },
+      "clangd": {
+        "current": "",
+        "latest": "",
+        "delta": "none",
+        "must_release": false
+      }
+    },
+    "playwright": {
+      "current": "1.47.0",
+      "latest": "1.60.0",
+      "delta": "minor",
+      "must_release": true
+    }
+  },
+  "last_release_at": "2026-06-15T09:59:08.065Z",
+  "stale_days": 0,
+  "recommendation": "RELEASE",
+  "recommendation_reason": "playwright minor"
+}

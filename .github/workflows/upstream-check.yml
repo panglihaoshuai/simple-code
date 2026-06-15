@@ -1,0 +1,94 @@
+name: Upstream Check
+
+on:
+  schedule:
+    # Every Monday 09:00 Beijing time (UTC 01:00)
+    - cron: "0 1 * * 1"
+  workflow_dispatch:
+    inputs:
+      force_issue:
+        description: "Force create issue even if no triggers"
+        required: false
+        default: "false"
+        type: boolean
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run upstream check
+        id: check
+        run: |
+          bun run script/upstream-tracker/upstream-check.sh.ts --json > generated/upstream-status.json
+          cat generated/upstream-status.json
+
+      - name: Create issue if triggers fired
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const status = JSON.parse(fs.readFileSync('generated/upstream-status.json', 'utf8'));
+
+            if (status.recommendation === 'NO_RELEASE') {
+              console.log('No upstream changes detected, skipping issue.');
+              return;
+            }
+
+            // Check for existing open upstream issues
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'upstream',
+              state: 'open',
+            });
+
+            if (existingIssues.data.length > 0) {
+              console.log(`Found ${existingIssues.data.length} existing upstream issue(s), skipping new creation.`);
+              return;
+            }
+
+            const body = [
+              `## Upstream Status Report`,
+              '',
+              `**Checked at:** ${status.checked_at}`,
+              `**Recommendation:** ${status.recommendation}`,
+              `**Reason:** ${status.recommendation_reason}`,
+              '',
+              '### Components',
+              '',
+              `| Component | Current | Latest | Delta | Must Release |`,
+              `|---|---|---|---|---|`,
+              `| agentmemory | ${status.components.agentmemory.current} | ${status.components.agentmemory.latest} | ${status.components.agentmemory.delta} | ${status.components.agentmemory.must_release} |`,
+              `| Understand-Anything | ${status.components.understand_anything.current} | ${status.components.understand_anything.latest} | ${status.components.understand_anything.delta} | ${status.components.understand_anything.must_release} |`,
+              `| agent-skills | ${status.components.agent_skills.current} | ${status.components.agent_skills.latest} | ${status.components.agent_skills.delta} | ${status.components.agent_skills.must_release} |`,
+              `| playwright | ${status.components.playwright.current} | ${status.components.playwright.latest} | ${status.components.playwright.delta} | ${status.components.playwright.must_release} |`,
+              '',
+              `Run \`bun run script/upstream-tracker/upstream-check.sh.ts\` locally to reproduce.`,
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[upstream] ${status.recommendation_reason}`,
+              body,
+              labels: ['upstream', 'maintenance'],
+            });
+
+      - name: Upload status artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: upstream-status
+          path: generated/upstream-status.json
