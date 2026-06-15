@@ -1,8 +1,10 @@
 import type { Config, NetConfig } from "./config.schema.js";
 
-// MirrorResolver: 学 cargo .cargo/config.toml 范式
-// 全局 [net].mirror base → 组件 [net.<comp>].<field> override，组件优先
-// 字段空字符串 = 走原站
+// MirrorResolver: cargo .cargo/config.toml precedence
+// 1. Component field (e.g. net.release.github_release)
+// 2. Component mirror (e.g. net.lsp.mirror)
+// 3. Global net.mirror base
+// 4. Empty = origin (no mirror)
 
 export class MirrorResolver {
   private cache: Map<string, string> = new Map();
@@ -35,13 +37,13 @@ export class MirrorResolver {
       }
     }
 
-    // 3. 全局 net.mirror fallback (cargo .cargo/config.toml [net] base)
+    // 3. Global net.mirror fallback (cargo .cargo/config.toml [net] base mirror)
     const globalMirror = net.mirror;
     if (typeof globalMirror === "string" && globalMirror !== "") {
       return globalMirror;
     }
 
-    // 4. 走原站
+    // 4. Empty = origin (no mirror)
     return "";
   }
 
