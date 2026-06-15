@@ -1,0 +1,11 @@
+{
+  "name": "simple-code",
+  "version": "0.1.0",
+  "opencodeVersion": ">=1.17.0 <2.0.0",
+  "description": "Zero-config opencode plugin: agentmemory + CodeGraph + UA + 24 agent-skills + 5 LSP + 3 MCP",
+  "entry": "./dist/index.js",
+  "hooks": ["command.executed", "file.edited", "file.watcher.updated", "installation.updated", "lsp.client.diagnostics", "lsp.updated", "message.part.removed", "message.part.updated", "message.removed", "message.updated", "permission.asked", "permission.replied", "server.connected", "session.created", "session.compacted", "session.deleted", "session.diff", "session.error", "session.idle", "session.status", "session.updated", "todo.updated", "shell.env", "tool.execute.after", "tool.execute.before", "tui.prompt.append", "tui.command.execute", "tui.toast.show"],
+  "mcpServers": ["context7", "playwright", "webfetch", "codegraph", "agentmemory"],
+  "skills": "./vendored/skills",
+  "commands": "./vendored/commands"
+}

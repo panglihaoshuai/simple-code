@@ -1,0 +1,16 @@
+node_modules/
+src/
+tests/
+tsconfig.json
+tsup.config.ts
+bun.lock
+.git/
+.github/
+.hermes/
+docs/
+scripts/
+*.log
+.DS_Store
+.env
+.env.local
+*.test.ts

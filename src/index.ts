@@ -1,6 +1,32 @@
-// Simple-code plugin entry stub (T1.1 minimal, expanded in T1.3)
 export default async function plugin() {
   return {
-    // hooks filled in T1.3 (M1 main entry) and T4.5 (M4 thin adapter for 28 events)
+    "command.executed": async () => {},
+    "file.edited": async () => {},
+    "file.watcher.updated": async () => {},
+    "installation.updated": async () => {},
+    "lsp.client.diagnostics": async () => {},
+    "lsp.updated": async () => {},
+    "message.part.removed": async () => {},
+    "message.part.updated": async () => {},
+    "message.removed": async () => {},
+    "message.updated": async () => {},
+    "permission.asked": async () => {},
+    "permission.replied": async () => {},
+    "server.connected": async () => {},
+    "session.created": async () => {},
+    "session.compacted": async () => {},
+    "session.deleted": async () => {},
+    "session.diff": async () => {},
+    "session.error": async () => {},
+    "session.idle": async () => {},
+    "session.status": async () => {},
+    "session.updated": async () => {},
+    "todo.updated": async () => {},
+    "shell.env": async () => {},
+    "tool.execute.after": async () => {},
+    "tool.execute.before": async () => {},
+    "tui.prompt.append": async () => {},
+    "tui.command.execute": async () => {},
+    "tui.toast.show": async () => {},
   };
 }
