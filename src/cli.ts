@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // simple-code CLI entry point
-// Routes subcommands: `simple-code config ...`, `simple-code init`, `simple-code update`, `simple-code uninstall`
+// Routes subcommands: `simple-code config ...`, `simple-code init`, `simple-code doctor`, etc.
 // Plugin loading is handled by opencode reading src/index.ts (built to dist/index.js)
 
 import { runConfig } from "./config.js";
@@ -13,9 +13,9 @@ const HELP = `simple-code — opencode plugin CLI
 Usage:
   simple-code config <subcommand>    show | set | unset | list
   simple-code init                    install plugin + write config + start daemon
-  simple-code update                  check 4 upstream + upgrade
+  simple-code doctor [--json]         validate all components and report status
+  simple-code status [--json]         alias for doctor
   simple-code uninstall               stop daemon + remove plugin entry
-  simple-code doctor                  validate config + manifest + opencode.json
   simple-code --version               print version
   simple-code --help                  this help
 `;
@@ -35,6 +35,8 @@ async function main(): Promise<void> {
   }
 
   const [command, ...rest] = argv;
+  const jsonMode = rest.includes("--json");
+
   switch (command) {
     case "config":
       await runConfig(rest);
@@ -43,13 +45,11 @@ async function main(): Promise<void> {
       await runInit(rest);
       break;
     case "doctor":
-      await runDoctor();
+    case "status":
+      await runDoctor({ json: jsonMode });
       break;
     case "uninstall":
       await runUninstall(rest);
-      break;
-    case "update":
-      process.stdout.write(`simple-code ${command}: not yet implemented\n`);
       break;
     default:
       process.stderr.write(`Unknown command: ${command}\n${HELP}`);
