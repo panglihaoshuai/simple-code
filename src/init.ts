@@ -16,7 +16,7 @@ Steps:
 `;
 
 const OPENCODE_CONFIG = `${process.env.HOME}/.config/opencode/opencode.json`;
-const SIMPLE_CODE_CONFIG = `${process.env.HOME}/.simple-code/config.toml`;
+const SIMPLE_CODE_CONFIG = process.env.SIMPLE_CODE_CONFIG ?? `${process.env.HOME}/.simple-code/config.toml`;
 
 function whichOpencode(): string | null {
   const path = process.env.PATH ?? "";

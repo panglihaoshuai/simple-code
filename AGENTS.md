@@ -141,3 +141,14 @@ simple-code/
 ## License
 
 MIT — see LICENSE. Plugin is not built by the OpenCode team.
+
+## Skill routing (auto-invoke)
+
+| 用户说 | 自动触发 |
+|--------|----------|
+| "这个 bug 怎么回事" / "为什么报错" | /investigate |
+| "代码质量怎么样" / "健康检查" | /health |
+| "这个项目是做什么的" / "解释一下代码" | /understand-chat |
+| "测试一下" / "能用吗" | /qa |
+| "发布" / "部署" | /ship |
+| "审查一下" / "review" | /review |

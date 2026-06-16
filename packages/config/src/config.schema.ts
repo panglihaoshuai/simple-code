@@ -140,12 +140,22 @@ interface DefaultConfig {
 
 export const DEFAULT_CONFIG: DefaultConfig = {
   net: {
-    release: { enabled: true, mirror: "" },
-    llm: { mirror: "" },
+    mirror: "https://ghproxy.com/", // global fallback for China
+    release: { 
+      enabled: true, 
+      mirror: "",
+      github_release: "https://ghproxy.com/https://registry.npmjs.org/simple-code",
+      homebrew_bottle: "https://ghproxy.com/https://github.com/Homebrew/homebrew-core",
+      npm_package: "https://registry.npmmirror.com"
+    },
+    llm: { mirror: "https://api.openai-proxy.com/v1" },
     lsp: { mirror: "https://gh-proxy.com/" },
     browser: { mirror: "https://npmmirror.com/mirrors/playwright" },
     mcp: { mirror: "" },
-    upstream: { git_clone: "", github_release: "" },
+    upstream: { 
+      git_clone: "https://ghproxy.com/https://github.com/",
+      github_release: "https://ghproxy.com/https://github.com/"
+    },
   },
   upstream_tracking: {
     agentmemory: { minor_bump: "threshold", patch_threshold: 3, poll_interval_hours: 24 },
