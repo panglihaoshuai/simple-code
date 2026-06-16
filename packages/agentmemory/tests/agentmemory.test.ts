@@ -97,7 +97,7 @@ describe("HTTPAgentMemoryProvider", () => {
   test("HTTPAgentMemoryProvider.search() throws when unavailable", async () => {
     const { HTTPAgentMemoryProvider } = await import(join(REPO, "packages", "agentmemory", "src", "http-provider.ts"));
     const provider = new HTTPAgentMemoryProvider("http://localhost:19999", 1000);
-    await expect(provider.search("test")).rejects.toThrow("failed");
+    await expect(provider.search("test")).rejects.toThrow("not supported");
   });
 });
 

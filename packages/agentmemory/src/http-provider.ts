@@ -63,28 +63,10 @@ export class HTTPAgentMemoryProvider implements AgentMemoryProvider {
     }
   }
 
-  async search(query: string, limit = 10): Promise<unknown[]> {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-
-      const res = await fetch(`${this.endpoint}/memory/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, limit }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const data = (await res.json()) as { results?: unknown[] };
-      return data.results ?? [];
-    } catch (err) {
-      throw new Error(`agentmemory search failed: ${err instanceof Error ? err.message : String(err)}`);
-    }
+  async search(_query: string, _limit?: number): Promise<unknown[]> {
+    // agentmemory daemon does not expose /memory/search endpoint
+    // This is a known limitation — search requires agentmemory internal hooks
+    throw new Error("agentmemory search not supported by daemon — requires agentmemory internal hooks");
   }
 
   async observe(event: string, data: unknown): Promise<void> {

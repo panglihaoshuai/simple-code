@@ -5,6 +5,8 @@
 
 import { runConfig } from "./config.js";
 import { runInit } from "./init.js";
+import { runDoctor } from "./doctor.js";
+import { runUninstall } from "./uninstall.js";
 
 const HELP = `simple-code — opencode plugin CLI
 
@@ -41,11 +43,13 @@ async function main(): Promise<void> {
       await runInit(rest);
       break;
     case "doctor":
-      process.stdout.write("simple-code doctor: stub (M3+)\n");
+      await runDoctor();
+      break;
+    case "uninstall":
+      await runUninstall(rest);
       break;
     case "update":
-    case "uninstall":
-      process.stdout.write(`simple-code ${command}: stub (M3+)\n`);
+      process.stdout.write(`simple-code ${command}: not yet implemented\n`);
       break;
     default:
       process.stderr.write(`Unknown command: ${command}\n${HELP}`);

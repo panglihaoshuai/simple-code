@@ -71,16 +71,16 @@ export class CLIAgentMemoryProvider implements AgentMemoryProvider {
   private extractNumber(output: string, label: string): number | undefined {
     const regex = new RegExp(`${label}\\s*(\\d+)`);
     const match = output.match(regex);
-    return match ? parseInt(match[1], 10) : undefined;
+    return match ? parseInt(match[1] as string, 10) : undefined;
   }
 
   private extractGraphNodeCount(output: string): number | undefined {
     const match = output.match(/Graph:\s*(\d+)\s*nodes/);
-    return match ? parseInt(match[1], 10) : undefined;
+    return match ? parseInt(match[1] as string, 10) : undefined;
   }
 
   private extractGraphEdgeCount(output: string): number | undefined {
     const match = output.match(/Graph:\s*\d+\s*nodes,\s*(\d+)\s*edges/);
-    return match ? parseInt(match[1], 10) : undefined;
+    return match ? parseInt(match[1] as string, 10) : undefined;
   }
 }
