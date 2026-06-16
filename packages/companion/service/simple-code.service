@@ -1,0 +1,15 @@
+[Unit]
+Description=simple-coded daemon - memory engine for simple-code plugin
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/bun run /usr/local/lib/node_modules/simple-code/packages/companion/src/simple-coded.ts
+Restart=always
+RestartSec=5
+Environment=SIMPLE_CODE_MEMORY_PORT=3111
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

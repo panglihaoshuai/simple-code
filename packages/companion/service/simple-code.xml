@@ -1,0 +1,14 @@
+<service>
+  <id>simple-code</id>
+  <name>simple-coded daemon</name>
+  <description>Memory engine for simple-code plugin</description>
+  <executable>%BASE%\bun.exe</executable>
+  <arguments>run %BASE%\packages\companion\src\simple-coded.ts</arguments>
+  <logpath>%BASE%\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>2</keepFiles>
+  </log>
+  <env name="SIMPLE_CODE_MEMORY_PORT" value="3111"/>
+  <startmode>Automatic</startmode>
+</service>

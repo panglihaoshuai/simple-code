@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.simple-code.daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/bun</string>
+        <string>run</string>
+        <string>/usr/local/lib/node_modules/simple-code/packages/companion/src/simple-coded.ts</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/simple-coded.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/simple-coded.err</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>SIMPLE_CODE_MEMORY_PORT</key>
+        <string>3111</string>
+    </dict>
+</dict>
+</plist>
