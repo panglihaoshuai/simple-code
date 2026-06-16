@@ -7,6 +7,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { ObservePayloadSchema, type HealthResponse } from "./types.js";
 import { loadConfig } from "./config-bridge.js";
+import { createProvider, type AgentMemoryProvider, type AgentMemoryStatus } from "../../agentmemory/src/index.js";
 
 const PORT_RANGE_START = parseInt(process.env.SIMPLE_CODE_MEMORY_PORT || "3111", 10);
 const PORT_RANGE_END = parseInt(process.env.SIMPLE_CODE_MEMORY_PORT_RANGE_END || "3119", 10);
@@ -18,6 +19,9 @@ const state = {
   startedAt: Date.now(),
   observationsTotal: 0,
   lastObserveAt: null as string | null,
+  agentmemoryStatus: null as AgentMemoryStatus | null,
+  provider: null as AgentMemoryProvider | null,        // for status/health (auto)
+  observeProvider: null as AgentMemoryProvider | null,  // for observe (HTTP only — CLI can't observe)
 };
 
 // ─── Port detection ───
@@ -53,7 +57,7 @@ function loadMemoryConfig(): { port: number; portRangeEnd: number } {
   }
 }
 
-// ─── Observe handler (forward to agentmemory HTTP API) ───
+// ─── Observe handler (forward to agentmemory via real provider) ───
 
 async function handleObserve(payload: unknown): Promise<Response> {
   const parsed = ObservePayloadSchema.safeParse(payload);
@@ -64,18 +68,29 @@ async function handleObserve(payload: unknown): Promise<Response> {
   state.observationsTotal++;
   state.lastObserveAt = parsed.data.timestamp;
 
-  // Forward to agentmemory daemon (same host, different port or same process)
-  // For now: stub that logs observation (real integration: POST to agentmemory :3111/observe)
+  // Forward to agentmemory via HTTP provider (CLI can't observe)
+  if (!state.observeProvider) {
+    return new Response(JSON.stringify({
+      ok: true,
+      id: state.observationsTotal,
+      agentmemory: { available: false, reason: "HTTP observe provider not initialized" },
+    }), { status: 200 });
+  }
+
   try {
-    // TODO: forward to real agentmemory HTTP API when available
-    // const res = await fetch(`http://localhost:${agentmemoryPort}/observe`, {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(parsed.data),
-    // });
-    return new Response(JSON.stringify({ ok: true, id: state.observationsTotal }), { status: 200 });
+    await state.observeProvider.observe(parsed.data.event, parsed.data);
+    return new Response(JSON.stringify({
+      ok: true,
+      id: state.observationsTotal,
+      agentmemory: { available: true, mode: state.agentmemoryStatus?.mode },
+    }), { status: 200 });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), { status: 502 });
+    // Provider.observe() failed — return 200 with warning (fire-and-forget semantics)
+    return new Response(JSON.stringify({
+      ok: true,
+      id: state.observationsTotal,
+      agentmemory: { available: false, error: String(err) },
+    }), { status: 200 });
   }
 }
 
@@ -89,6 +104,7 @@ function handleHealth(): Response {
     uptime_s: Math.round(elapsed_s),
     observations_total: state.observationsTotal,
     last_observe_at: state.lastObserveAt,
+    agentmemory: state.agentmemoryStatus ?? { available: false, mode: "unavailable", reason: "not initialized" },
   };
   return new Response(JSON.stringify(body), {
     status: 200,
@@ -102,6 +118,13 @@ async function main(): Promise<void> {
   const cfg = loadMemoryConfig();
   const port = await findAvailablePort(cfg.port, cfg.portRangeEnd);
   state.port = port;
+
+  // Initialize real agentmemory provider (auto for status, HTTP for observe)
+  state.provider = await createProvider({ mode: "auto", timeoutMs: 5000 });
+  state.observeProvider = await createProvider({ mode: "http", timeoutMs: 5000 });
+  state.agentmemoryStatus = await state.provider.status();
+  const observeStatus = await state.observeProvider.status();
+  process.stdout.write(`agentmemory: status=${state.agentmemoryStatus.available ? "connected" : "unavailable"} (${state.agentmemoryStatus.mode}), observe=${observeStatus.available ? "connected" : "unavailable"} (${observeStatus.mode})\n`);
 
   const server = Bun.serve({
     port,

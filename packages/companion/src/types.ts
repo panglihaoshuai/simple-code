@@ -19,6 +19,13 @@ export const HealthResponseSchema = z.object({
   observations_total: z.number(),
   last_observe_at: z.string().datetime().nullable(),
   error: z.string().optional(),
+  agentmemory: z.object({
+    available: z.boolean(),
+    mode: z.string(),
+    version: z.string().optional(),
+    endpoint: z.string().optional(),
+    reason: z.string().optional(),
+  }).optional(),
 });
 
 export type HealthResponse = z.infer<typeof HealthResponseSchema>;

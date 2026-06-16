@@ -1,81 +1,109 @@
 # simple-code
 
-> Zero-config opencode plugin: agentmemory + CodeGraph + UA + 24 agent-skills + 5 LSP + 3 MCP, all in one `npm i -g`.
+> **WIP Prototype** — Not production-ready. Do not npm publish.
 
-simple-code is an opencode plugin (not a fork). Install once, get a fully-loaded coding + work agent with zero configuration.
+An opencode plugin scaffold for integrating agentmemory, CodeGraph, Understand-Anything, agent-skills, LSP, and MCP into a single workflow.
 
-## What you get
+## Current Status
 
-- **agentmemory** — persistent memory across sessions (12 auto-capture hooks, BM25 + vector + graph search, 95.2% R@5)
-- **CodeGraph** — tree-sitter AST knowledge graph (38 languages, 0 LLM tokens, file watcher auto-sync)
-- **Understand-Anything** — 8 `/understand*` commands (business / dashboard / LLM wiki analysis)
-- **agent-skills** — 24 production-grade skills (DEFINE → PLAN → BUILD → VERIFY → REVIEW → SHIP)
-- **5 LSPs** — rust-analyzer / pyright / typescript / jdtls / gopls / clangd (on-demand install)
-- **3 MCPs** — context7 (docs) / playwright (browser) / webfetch (HTTP)
-- **opencode Zen free tier** — works without your own API key (100 req/day)
-- **China-friendly mirrors** — default npmmirror + ghproxy, no setup needed
-- **0 telemetry** — your code never leaves your machine
+| Milestone | Status | What Exists | What Is Missing |
+|-----------|--------|-------------|-----------------|
+| M1 | ✅ PASS | package.json, plugin manifest, src/index.ts, README 22lang, LICENSE | — |
+| M2 | ✅ PASS | config package, Zod schema, ConfigLoader, MirrorResolver, CLI, init | — |
+| M3 | ✅ PASS | upstream-check.sh, detection scripts, upstream-status.json | GitHub Actions (workflow scope) |
+| M4 | ⚠️ PARTIAL | daemon stub, plugin adapter (28 hooks), service templates, uninstall | **agentmemory real wiring**, vendor-sync.sh |
+| M5 | ⚠️ PARTIAL | skills framework, CodeGraph MCP stub, knowledge-graph paths | **UA 8 commands**, **agent-skills 24 skills**, real tree-sitter |
+| M6 | ⚠️ PARTIAL | MCP abstraction (stdio/http), context7/playwright stubs, LSP abstraction | **Real MCP servers**, **LSP binary download**, chromium vendor |
+| M7 | ⚠️ PARTIAL | init CLI, uninstall logic, config.toml defaults | key mode UI, daemon auto-start, GitHub Actions |
 
-## Install
+## Implemented
 
-```bash
-npm i -g simple-code
-simple-code init
-```
+- Config system with Zod schema + China-friendly mirrors (ghproxy, npmmirror)
+- Mirror resolver with 4-level cargo precedence
+- `simple-code config` CLI (show/set/get/unset/list)
+- `simple-code init` (detect opencode, patch config, write defaults)
+- upstream-check.sh (agentmemory, UA, agent-skills, LSP, playwright detection)
+- simple-coded daemon (port avoidance, /health, /memory/observe)
+- plugin adapter (28 opencode lifecycle hooks → POST to daemon)
+- service templates (launchd, systemd, WinSW)
+- MCP abstraction layer (createMcpClient, stdio/http transports)
+- LSP abstraction layer (listLsps, installLsp, removeLsp — 6 languages)
+- skills framework (registerCommand, registerSkill)
+- CodeGraph MCP stub (codegraph_context, codegraph_explore)
 
-`init` writes `~/.config/opencode/opencode.json` plugin entry, starts the agentmemory daemon, and writes `~/.simple-code/config.toml` with sensible defaults.
+## Partial / Scaffolded
 
-## Use
+- agentmemory daemon is a stub (no real memory engine)
+- UA commands framework exists but no real /understand* commands
+- agent-skills framework exists but no real 24 skills registered
+- CodeGraph MCP is a stub (no real tree-sitter analysis)
+- LSP list/install/remove is a stub (no real binary download)
+- MCP clients (context7, playwright) are stubs (no real server connection)
+- init key mode selection UI is incomplete
 
-```bash
-opencode
-```
+## Planned (Not Implemented)
 
-Inside opencode you'll see:
-- 28 lifecycle hooks (file edits, session events, tool calls, etc.) wired to agentmemory
-- 5 LSPs auto-attached based on file extensions
-- 3 MCPs (context7, playwright, webfetch) + 2 plugin-MCPs (codegraph, agentmemory)
-- 8 `/understand*` commands (UA knowledge graph)
-- 24 agent-skills in DEFINE→SHIP workflow
+- vendor-sync.sh (agentmemory, UA, agent-skills vendor scripts)
+- Real agentmemory integration (CLI/HTTP provider)
+- Real CodeGraph tree-sitter analysis
+- Real UA /understand* commands
+- Real agent-skills (24 production-grade skills)
+- Real LSP binary download + install
+- Real MCP server connections (context7, playwright, webfetch)
+- Chromium-headless-shell vendor (5 platforms)
+- /understand-dashboard (static HTML)
+- skill tool trigger (prompt intent recognition)
+- install wrapper (npm install interceptor)
+- GitHub Actions workflows (needs workflow scope)
 
-## Configure
-
-```bash
-simple-code config show          # print 5 net segments + upstream tracking + memory + LSP/MCP toggles
-simple-code config set net.mirror https://ghproxy.com/
-simple-code config set net.llm.mirror https://api.openai-proxy.com/v1
-simple-code config unset lsp.rust
-simple-code config list           # all keys
-```
-
-Edit `~/.simple-code/config.toml` directly also works.
-
-## Update
-
-```bash
-simple-code update
-```
-
-Checks 4 upstream sources (agentmemory, CodeGraph, Understand-Anything, agent-skills). If a breaking change is pending, you'll see a `⚠ breaking change` toast with the CHANGELOG.
-
-## Uninstall
+## Quick Start
 
 ```bash
-simple-code uninstall
+# Install (not published yet — clone and build)
+git clone https://github.com/panglihaoshuai/simple-code.git
+cd simple-code
+bun install
+bun run build
+
+# Run tests
+bun test
+
+# Typecheck
+bun run typecheck
 ```
 
-Stops the daemon, removes the plugin entry from `opencode.json`, backs up `~/.simple-code/config.toml`.
+## Architecture
 
-## Vendored upstream
+```
+simple-code/
+├── src/                    # CLI + plugin entry
+│   ├── index.ts            # opencode plugin entry (28 hook stubs)
+│   ├── cli.ts              # simple-code CLI
+│   ├── config.ts           # config subcommands
+│   └── init.ts             # init flow
+├── packages/
+│   ├── config/             # Zod schema + ConfigLoader + MirrorResolver
+│   ├── companion/          # simple-coded daemon + plugin adapter
+│   ├── mcp/                # MCP abstraction + clients
+│   ├── lsp/                # LSP abstraction
+│   └── skills/             # skills framework
+├── script/                 # upstream-check.sh
+├── tests/                  # 204 tests across 30 files
+└── docs/                   # mirror.md, implementation-status.md
+```
 
-- opencode v1.17.6 (we don't fork, we integrate via plugin)
-- agentmemory v0.9.27
-- CodeGraph v1.0.1
-- Understand-Anything v2.7.3
-- agent-skills v0.6.2
+## Testing
 
-This plugin is **not** built by the OpenCode team. OpenCode is a registered trademark of Anomaly Innovations, Inc.
+```bash
+bun test                    # 204 pass, 0 fail
+bun run typecheck           # 0 errors
+bun run build               # success
+```
 
 ## License
 
-MIT © 2026 panglihaoshuai
+MIT
+
+## Disclaimer
+
+This is a **WIP prototype**, not a production-ready product. Many advertised features are scaffolded but not fully wired. See `docs/implementation-status.md` for detailed status.
