@@ -143,6 +143,26 @@ describe("simple-code doctor", () => {
     expect(br).toBeDefined();
     expect(br.status).toBe("missing");
   });
+
+  test("CodeGraph PASS requires parser=typescript-ast (not just file existence)", () => {
+    const { stdout } = runDoctor(["--json"]);
+    const parsed = JSON.parse(stdout);
+    const cg = parsed.checks.find((c: { id: string }) => c.id === "codegraph");
+    expect(cg).toBeDefined();
+    expect(cg.status).toBe("pass");
+    // Evidence must include parser type, not just file paths
+    expect(cg.evidence.some((e: string) => e.includes("typescript-ast"))).toBe(true);
+    expect(cg.evidence.some((e: string) => e.includes("supported extensions"))).toBe(true);
+  });
+
+  test("CodeGraph PASS evidence includes capability details", () => {
+    const { stdout } = runDoctor(["--json"]);
+    const parsed = JSON.parse(stdout);
+    const cg = parsed.checks.find((c: { id: string }) => c.id === "codegraph");
+    expect(cg.evidence.some((e: string) => e.includes(".ts"))).toBe(true);
+    expect(cg.evidence.some((e: string) => e.includes(".js"))).toBe(true);
+    expect(cg.evidence.some((e: string) => e.includes("symbols: true"))).toBe(true);
+  });
 });
 
 describe("simple-code status (alias)", () => {

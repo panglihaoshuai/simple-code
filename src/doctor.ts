@@ -89,25 +89,35 @@ async function checkAgentmemory(): Promise<DoctorCheck> {
 }
 
 function checkCodeGraph(): DoctorCheck {
-  const cgDir = join(process.cwd(), "packages", "codegraph", "src");
-  const mcpStub = join(process.cwd(), "packages", "mcp", "src", "codegraph.ts");
   const evidence: string[] = [];
   const nextActions: string[] = [];
 
-  if (existsSync(join(cgDir, "index.ts"))) {
-    evidence.push("packages/codegraph/src/index.ts exists (real symbol extraction)");
-  }
-  if (existsSync(mcpStub)) {
-    evidence.push("packages/mcp/src/codegraph.ts exists (MCP stub)");
-  }
+  try {
+    // Dynamic import to probe real capability
+    const { getCodeGraphCapabilities } = require(join(process.cwd(), "packages", "codegraph", "src", "types.js"));
+    const caps = getCodeGraphCapabilities();
 
-  if (evidence.length === 0) {
-    return { id: "codegraph", label: "CodeGraph", status: "missing", required: false, evidence: ["not found"], nextActions: ["Implement CodeGraph symbol extraction"] };
-  }
+    if (caps.parser === "typescript-ast") {
+      evidence.push(`parser: ${caps.parser}`);
+      evidence.push(`supported extensions: ${caps.supportedExtensions.join(", ")}`);
+      evidence.push(`symbols: ${caps.supportsSymbols}, imports: ${caps.supportsImports}, exports: ${caps.supportsExports}`);
+      evidence.push(`reference mode: ${caps.referenceMode}`);
+      return { id: "codegraph", label: "CodeGraph", status: "pass", required: false, evidence, nextActions: ["Optional: add more language parsers"] };
+    }
 
-  // Has real extraction but not vendored tree-sitter
-  nextActions.push("Optional: integrate tree-sitter WASM for richer parsing");
-  return { id: "codegraph", label: "CodeGraph", status: "partial", required: false, evidence, nextActions };
+    if (caps.parser === "regex") {
+      evidence.push("regex-only parser (no AST)");
+      nextActions.push("Upgrade to AST-backed extraction (TypeScript Compiler API)");
+      return { id: "codegraph", label: "CodeGraph", status: "partial", required: false, evidence, nextActions };
+    }
+
+    evidence.push("parser unavailable");
+    nextActions.push("Implement CodeGraph symbol extraction");
+    return { id: "codegraph", label: "CodeGraph", status: "missing", required: false, evidence, nextActions };
+  } catch {
+    // Module cannot load
+    return { id: "codegraph", label: "CodeGraph", status: "missing", required: false, evidence: ["module cannot load"], nextActions: ["Implement CodeGraph symbol extraction"] };
+  }
 }
 
 function checkUA(): DoctorCheck {
