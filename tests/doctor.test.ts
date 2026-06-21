@@ -144,24 +144,31 @@ describe("simple-code doctor", () => {
     expect(br.status).toBe("missing");
   });
 
-  test("CodeGraph PASS requires parser=typescript-ast (not just file existence)", () => {
+  test("CodeGraph capability gate is enforced (not just file existence)", () => {
     const { stdout } = runDoctor(["--json"]);
     const parsed = JSON.parse(stdout);
     const cg = parsed.checks.find((c: { id: string }) => c.id === "codegraph");
     expect(cg).toBeDefined();
-    expect(cg.status).toBe("pass");
-    // Evidence must include parser type, not just file paths
-    expect(cg.evidence.some((e: string) => e.includes("typescript-ast"))).toBe(true);
-    expect(cg.evidence.some((e: string) => e.includes("supported extensions"))).toBe(true);
+    // Should be managed, global-compat, or lite — never "missing" with code present
+    expect(["pass", "partial"]).toContain(cg.status);
+    // Evidence must mention runtime source (managed-private, global-compat, or built-in)
+    expect(cg.evidence.some((e: string) => /source:|built-in/i.test(e))).toBe(true);
   });
 
-  test("CodeGraph PASS evidence includes capability details", () => {
+  test("CodeGraph Full evidence includes tree-sitter + callers/impact", () => {
     const { stdout } = runDoctor(["--json"]);
     const parsed = JSON.parse(stdout);
     const cg = parsed.checks.find((c: { id: string }) => c.id === "codegraph");
-    expect(cg.evidence.some((e: string) => e.includes(".ts"))).toBe(true);
-    expect(cg.evidence.some((e: string) => e.includes(".js"))).toBe(true);
-    expect(cg.evidence.some((e: string) => e.includes("symbols: true"))).toBe(true);
+    // Either Full (with cross-file, callers, impact) or Lite (TS/JS only)
+    if (cg.status === "pass") {
+      // Full upstream path
+      expect(cg.evidence.some((e: string) => e.includes("tree-sitter"))).toBe(true);
+      expect(cg.evidence.some((e: string) => e.includes("callers"))).toBe(true);
+      expect(cg.evidence.some((e: string) => e.includes("impact"))).toBe(true);
+    } else {
+      // Lite path — TS/JS only
+      expect(cg.evidence.some((e: string) => e.includes("typescript")) || cg.evidence.some((e: string) => e.includes("TypeScript"))).toBe(true);
+    }
   });
 });
 

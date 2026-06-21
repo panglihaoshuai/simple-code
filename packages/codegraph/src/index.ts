@@ -7,6 +7,11 @@ import { collectFiles, parseFile } from "./typescript-parser.js";
 
 export type { SymbolKind, CodeSymbol, ImportEdge, ExportEdge, ProjectGraphResult, CodeGraphCapabilities } from "./types.js";
 export { getCodeGraphCapabilities, CODEGRAPH_CAPABILITIES } from "./types.js";
+export type { CodeGraphProvider, CodeGraphStatus, CodeGraphMode } from "./provider-types.js";
+export { FullCodeGraphProvider } from "./full-provider.js";
+export { LiteCodeGraphProvider } from "./lite-provider.js";
+export { resolveProvider, isUpstreamAvailable, isManagedRuntimeAvailable, type ProviderConfig, type ProviderResolution } from "./provider-factory.js";
+export { resolveManagedRuntime, runManagedCodegraph, type ManagedRuntimeStatus, type ManagedRuntimeSource } from "./managed-runtime.js";
 
 // ─── Backward-compatible types (from regex era) ───
 

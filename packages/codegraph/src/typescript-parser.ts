@@ -4,7 +4,7 @@
 import ts from "typescript";
 import { basename, relative, join } from "node:path";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import type { CodeSymbol, ImportEdge, ExportEdge, SymbolKind } from "./types.js";
+import type { CodeSymbol, ImportEdge, ExportEdge, SymbolKind, ProjectGraphResult } from "./types.js";
 
 const SUPPORTED_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mts", ".mjs"]);
 const IGNORE_DIRS = new Set(["node_modules", "dist", ".git", ".codegraph", ".next", "build", "coverage"]);
@@ -206,4 +206,28 @@ export function parseFile(
 
   visit(sourceFile);
   return { symbols, imports, exports };
+}
+
+
+export function analyzeProject(rootDir: string): ProjectGraphResult {
+  const diagnostics: string[] = [];
+  const files = collectFiles(rootDir);
+  const allSymbols: CodeSymbol[] = [];
+  const allImports: ImportEdge[] = [];
+  const allExports: ExportEdge[] = [];
+  for (const file of files) {
+    try {
+      const result = parseFile(file, rootDir, diagnostics);
+      allSymbols.push(...result.symbols);
+      allImports.push(...result.imports);
+      allExports.push(...result.exports);
+    } catch (err) {
+      const relFile = file.replace(rootDir, "").replace(/^\//, "");
+      diagnostics.push(`${relFile}: unexpected error — ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  allSymbols.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.name.localeCompare(b.name));
+  allImports.sort((a, b) => a.sourceFile.localeCompare(b.sourceFile));
+  allExports.sort((a, b) => a.sourceFile.localeCompare(b.sourceFile));
+  return { root: rootDir, files, symbols: allSymbols, imports: allImports, exports: allExports, diagnostics };
 }

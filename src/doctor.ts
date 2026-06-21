@@ -88,35 +88,61 @@ async function checkAgentmemory(): Promise<DoctorCheck> {
   return { id: "agentmemory", label: "agentmemory", status: "missing", required: true, evidence, nextActions: ["Install: npm i -g agentmemory", "Start daemon"] };
 }
 
-function checkCodeGraph(): DoctorCheck {
+async function checkCodeGraph(): Promise<DoctorCheck> {
   const evidence: string[] = [];
   const nextActions: string[] = [];
 
   try {
-    // Dynamic import to probe real capability
-    const { getCodeGraphCapabilities } = require(join(process.cwd(), "packages", "codegraph", "src", "types.js"));
-    const caps = getCodeGraphCapabilities();
+    const { resolveProvider, resolveManagedRuntime, getCodeGraphCapabilities } = require(join(process.cwd(), "packages", "codegraph", "src", "index.js"));
 
-    if (caps.parser === "typescript-ast") {
+    // Probe managed runtime (private ~/.codegraph/ directory)
+    const rt = resolveManagedRuntime();
+    evidence.push(`source: ${rt.source}`);
+    if (rt.version) evidence.push(`version: ${rt.version}`);
+    if (rt.executable) evidence.push(`executable: ${rt.executable}`);
+    evidence.push(`verified: ${rt.verified}`);
+
+    // Check project index
+    const fs = require("node:fs");
+    const path = require("node:path");
+    const dbPath = path.join(process.cwd(), ".codegraph", "codegraph.db");
+    const initialized = fs.existsSync(dbPath);
+    evidence.push(`index: ${initialized ? "healthy" : "not initialized"}`);
+
+    // MANAGED_FULL: private runtime available and verified
+    if (rt.available && rt.source === "managed-private" && rt.verified) {
+      const { provider } = resolveProvider();
+      const caps = await provider.capabilities();
       evidence.push(`parser: ${caps.parser}`);
-      evidence.push(`supported extensions: ${caps.supportedExtensions.join(", ")}`);
-      evidence.push(`symbols: ${caps.supportsSymbols}, imports: ${caps.supportsImports}, exports: ${caps.supportsExports}`);
-      evidence.push(`reference mode: ${caps.referenceMode}`);
-      return { id: "codegraph", label: "CodeGraph", status: "pass", required: false, evidence, nextActions: ["Optional: add more language parsers"] };
+      evidence.push(`languages: ${caps.supportedExtensions.length}+ extensions`);
+      evidence.push(`cross-file: ${caps.supportsCrossFile}, callers: ${caps.supportsCallers}, impact: ${caps.supportsImpact}`);
+      evidence.push(`MCP: ${caps.supportsMCP}, auto-sync: ${caps.supportsAutoSync}`);
+      return { id: "codegraph", label: "CodeGraph (Managed)", status: "pass", required: false, evidence, nextActions: initialized ? [] : ["Run: simple-code codegraph init ."] };
     }
 
-    if (caps.parser === "regex") {
-      evidence.push("regex-only parser (no AST)");
-      nextActions.push("Upgrade to AST-backed extraction (TypeScript Compiler API)");
-      return { id: "codegraph", label: "CodeGraph", status: "partial", required: false, evidence, nextActions };
+    // GLOBAL_COMPAT: only system PATH codegraph
+    if (rt.available && rt.source === "global-compat") {
+      evidence.push("⚠ using global PATH codegraph (not managed by simple-code)");
+      nextActions.push("simple-code will manage its own runtime in a future update");
+      const { provider } = resolveProvider();
+      const caps = await provider.capabilities();
+      evidence.push(`parser: ${caps.parser}`);
+      return { id: "codegraph", label: "CodeGraph (Global Compat)", status: "partial", required: false, evidence, nextActions };
     }
 
-    evidence.push("parser unavailable");
-    nextActions.push("Implement CodeGraph symbol extraction");
-    return { id: "codegraph", label: "CodeGraph", status: "missing", required: false, evidence, nextActions };
+    // LITE: only built-in TS/JS AST
+    const caps = getCodeGraphCapabilities();
+    if (caps.parser === "typescript-ast") {
+      evidence.push("built-in TypeScript/JavaScript AST extractor available");
+      evidence.push("no persistent index, no MCP, no callers/impact");
+      nextActions.push("simple-code will manage its own CodeGraph runtime in a future update");
+      return { id: "codegraph", label: "CodeGraph (Lite)", status: "partial", required: false, evidence, nextActions };
+    }
+
+    // MISSING
+    return { id: "codegraph", label: "CodeGraph", status: "missing", required: false, evidence, nextActions: ["CodeGraph runtime not available"] };
   } catch {
-    // Module cannot load
-    return { id: "codegraph", label: "CodeGraph", status: "missing", required: false, evidence: ["module cannot load"], nextActions: ["Implement CodeGraph symbol extraction"] };
+    return { id: "codegraph", label: "CodeGraph", status: "missing", required: false, evidence: ["module cannot load"], nextActions: ["CodeGraph runtime not available"] };
   }
 }
 
@@ -283,7 +309,7 @@ export async function getDoctorResult(): Promise<DoctorResult> {
   checks.push(checkPluginConfig());
   checks.push(checkConfigFile());
   checks.push(await checkAgentmemory());
-  checks.push(checkCodeGraph());
+  checks.push(await checkCodeGraph());
   checks.push(checkUA());
   checks.push(checkAgentSkills());
   checks.push(checkMCP());
