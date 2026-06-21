@@ -16,6 +16,8 @@ Usage:
   simple-code doctor [--json]         validate all components and report status
   simple-code status [--json]         alias for doctor
   simple-code codegraph <path> [--json]  analyze project with AST-backed CodeGraph
+  simple-code codegraph init [path]   initialize CodeGraph index for project
+  simple-code codegraph status        show CodeGraph runtime + index status
   simple-code uninstall               stop daemon + remove plugin entry
   simple-code --version               print version
   simple-code --help                  this help
@@ -52,7 +54,7 @@ async function main(): Promise<void> {
       break;
     case "codegraph":
     case "analyze":
-      await runCodegraph(args[0] ?? ".", jsonMode);
+      await runCodegraphCommand(args, jsonMode);
       break;
     case "uninstall":
       await runUninstall(rest);
@@ -63,11 +65,71 @@ async function main(): Promise<void> {
   }
 }
 
-async function runCodegraph(path: string, json: boolean): Promise<void> {
-  const { analyzeProject } = await import("../packages/codegraph/src/index.js");
+async function runCodegraphCommand(args: string[], json: boolean): Promise<void> {
+  const subcommand = args[0] ?? "";
+
+  // simple-code codegraph init [path]
+  if (subcommand === "init") {
+    const projectPath = args[1] ?? ".";
+    const { runManagedCodegraph, resolveManagedRuntime } = await import("../packages/codegraph/src/managed-runtime.js");
+    const { resolve } = await import("node:path");
+    const rootDir = resolve(projectPath);
+
+    const rt = resolveManagedRuntime();
+    if (!rt.available) {
+      process.stderr.write("CodeGraph runtime not found. Run: simple-code codegraph status\n");
+      process.exit(1);
+    }
+
+    process.stdout.write(`Initializing CodeGraph index for ${rootDir}...\n`);
+    process.stdout.write(`Runtime: ${rt.executable} (v${rt.version})\n`);
+    const r = runManagedCodegraph(["init", rootDir], rootDir, { timeoutMs: 120000 });
+    if (r.exitCode !== 0) {
+      process.stderr.write(`codegraph init failed: ${r.stderr || r.stdout}\n`);
+      process.exit(r.exitCode);
+    }
+    process.stdout.write(r.stdout);
+    return;
+  }
+
+  // simple-code codegraph status
+  if (subcommand === "status") {
+    const { resolveManagedRuntime } = await import("../packages/codegraph/src/managed-runtime.js");
+    const { resolveProvider } = await import("../packages/codegraph/src/provider-factory.js");
+    const { existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+
+    const rt = resolveManagedRuntime();
+    const { provider, mode, source } = resolveProvider();
+    const status = await provider.status(process.cwd());
+    const dbPath = join(process.cwd(), ".codegraph", "codegraph.db");
+    const initialized = existsSync(dbPath);
+
+    if (json) {
+      process.stdout.write(JSON.stringify({ runtime: rt, provider: { mode, source }, status, initialized }, null, 2) + "\n");
+      return;
+    }
+
+    process.stdout.write("CodeGraph Status\n\n");
+    process.stdout.write(`Runtime source: ${rt.source}\n`);
+    process.stdout.write(`Runtime version: ${rt.version ?? "N/A"}\n`);
+    process.stdout.write(`Runtime executable: ${rt.executable ?? "N/A"}\n`);
+    process.stdout.write(`Runtime verified: ${rt.verified}\n`);
+    process.stdout.write(`Provider mode: ${mode}\n`);
+    process.stdout.write(`Provider source: ${source}\n`);
+    process.stdout.write(`Project index: ${initialized ? "healthy" : "not initialized"}\n`);
+    if (initialized) process.stdout.write(`Index path: ${dbPath}\n`);
+    process.stdout.write(`Languages: ${status.languages.join(", ")}\n`);
+    if (!rt.available) process.stdout.write(`\nReason: ${rt.reason}\n`);
+    return;
+  }
+
+  // simple-code codegraph <path> [--json] — analyze project with AST
+  const projectPath = subcommand || ".";
+  const { analyzeProject } = await import("../packages/codegraph/src/typescript-parser.js");
   const { resolve } = await import("node:path");
 
-  const rootDir = resolve(path);
+  const rootDir = resolve(projectPath);
   const result = analyzeProject(rootDir);
 
   if (json) {

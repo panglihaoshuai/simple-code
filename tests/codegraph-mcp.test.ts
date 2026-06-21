@@ -15,8 +15,11 @@ describe("T5.11 + T5.12: CodeGraph MCP integration", () => {
     const mcpPath = join(REPO, "packages", "mcp", "src", "codegraph.ts");
     if (existsSync(mcpPath)) {
       const content = require("fs").readFileSync(mcpPath, "utf-8");
-      expect(content).toContain("codegraph_context");
       expect(content).toContain("codegraph_explore");
+      expect(content).toContain("codegraph_search");
+      expect(content).toContain("codegraph_node");
+      expect(content).toContain("codegraph_callers");
+      expect(content).toContain("codegraph_status");
     }
   });
 
